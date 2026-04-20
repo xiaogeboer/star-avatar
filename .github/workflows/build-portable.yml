@@ -30,15 +30,11 @@ jobs:
         run: python packaging/build_portable.py
 
       - name: Configure Apple signing keychain
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-latest' && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64 != '' && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD != ''
         env:
           APPLE_CERT_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64 }}
           APPLE_CERT_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD }}
         run: |
-          if [ -z "$APPLE_CERT_BASE64" ] || [ -z "$APPLE_CERT_PASSWORD" ]; then
-            echo "Missing APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64 or APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD"
-            exit 1
-          fi
           KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
           CERT_PATH="$RUNNER_TEMP/developer-id.p12"
           echo "$APPLE_CERT_BASE64" | base64 --decode > "$CERT_PATH"
@@ -50,14 +46,10 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN_PATH"
 
       - name: Codesign macOS binaries
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-latest' && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64 != '' && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD != '' && secrets.APPLE_DEVELOPER_ID_APPLICATION_IDENTITY != ''
         env:
           APPLE_IDENTITY: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_IDENTITY }}
         run: |
-          if [ -z "$APPLE_IDENTITY" ]; then
-            echo "Missing APPLE_DEVELOPER_ID_APPLICATION_IDENTITY"
-            exit 1
-          fi
           TARGET_DIR="dist/sports-avatar-tool"
           if [ ! -d "$TARGET_DIR" ]; then
             echo "Build output directory not found: $TARGET_DIR"
@@ -71,7 +63,7 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "$TARGET_DIR/sports-avatar-tool"
 
       - name: Repack signed macOS archive
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-latest' && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64 != '' && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD != '' && secrets.APPLE_DEVELOPER_ID_APPLICATION_IDENTITY != ''
         run: |
           rm -f release/*macos*.zip
           ARCH="$(uname -m)"
@@ -80,16 +72,12 @@ jobs:
           echo "Repacked signed archive: $OUT"
 
       - name: Notarize macOS archive
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-latest' && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64 != '' && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD != '' && secrets.APPLE_DEVELOPER_ID_APPLICATION_IDENTITY != '' && secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' && secrets.APPLE_TEAM_ID != ''
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          if [ -z "$APPLE_ID" ] || [ -z "$APPLE_APP_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ]; then
-            echo "Missing APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD or APPLE_TEAM_ID"
-            exit 1
-          fi
           ZIP_FILE="$(ls release/*macos*.zip | head -n 1)"
           if [ -z "$ZIP_FILE" ]; then
             echo "No macOS archive found to notarize"
@@ -100,6 +88,11 @@ jobs:
             --password "$APPLE_APP_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
             --wait
+
+      - name: Notarization skipped notice
+        if: matrix.os == 'macos-latest' && (secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64 == '' || secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD == '' || secrets.APPLE_DEVELOPER_ID_APPLICATION_IDENTITY == '' || secrets.APPLE_ID == '' || secrets.APPLE_APP_SPECIFIC_PASSWORD == '' || secrets.APPLE_TEAM_ID == '')
+        run: |
+          echo "Apple signing/notarization secrets not configured. Built unsigned macOS package."
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
