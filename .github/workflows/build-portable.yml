@@ -29,6 +29,78 @@ jobs:
       - name: Build portable archive
         run: python packaging/build_portable.py
 
+      - name: Configure Apple signing keychain
+        if: matrix.os == 'macos-latest'
+        env:
+          APPLE_CERT_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64 }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD }}
+        run: |
+          if [ -z "$APPLE_CERT_BASE64" ] || [ -z "$APPLE_CERT_PASSWORD" ]; then
+            echo "Missing APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64 or APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD"
+            exit 1
+          fi
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          CERT_PATH="$RUNNER_TEMP/developer-id.p12"
+          echo "$APPLE_CERT_BASE64" | base64 --decode > "$CERT_PATH"
+          security create-keychain -p "" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$APPLE_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN_PATH"
+
+      - name: Codesign macOS binaries
+        if: matrix.os == 'macos-latest'
+        env:
+          APPLE_IDENTITY: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_IDENTITY }}
+        run: |
+          if [ -z "$APPLE_IDENTITY" ]; then
+            echo "Missing APPLE_DEVELOPER_ID_APPLICATION_IDENTITY"
+            exit 1
+          fi
+          TARGET_DIR="dist/sports-avatar-tool"
+          if [ ! -d "$TARGET_DIR" ]; then
+            echo "Build output directory not found: $TARGET_DIR"
+            exit 1
+          fi
+          while IFS= read -r -d '' file; do
+            if file "$file" | grep -q "Mach-O"; then
+              codesign --force --options runtime --timestamp --sign "$APPLE_IDENTITY" "$file"
+            fi
+          done < <(find "$TARGET_DIR" -type f -print0)
+          codesign --verify --deep --strict --verbose=2 "$TARGET_DIR/sports-avatar-tool"
+
+      - name: Repack signed macOS archive
+        if: matrix.os == 'macos-latest'
+        run: |
+          rm -f release/*macos*.zip
+          ARCH="$(uname -m)"
+          OUT="release/sports-avatar-tool-macos-${ARCH}.zip"
+          ditto -c -k --keepParent "dist/sports-avatar-tool" "$OUT"
+          echo "Repacked signed archive: $OUT"
+
+      - name: Notarize macOS archive
+        if: matrix.os == 'macos-latest'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -z "$APPLE_ID" ] || [ -z "$APPLE_APP_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ]; then
+            echo "Missing APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD or APPLE_TEAM_ID"
+            exit 1
+          fi
+          ZIP_FILE="$(ls release/*macos*.zip | head -n 1)"
+          if [ -z "$ZIP_FILE" ]; then
+            echo "No macOS archive found to notarize"
+            exit 1
+          fi
+          xcrun notarytool submit "$ZIP_FILE" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

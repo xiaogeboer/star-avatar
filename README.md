@@ -60,6 +60,20 @@ It builds and uploads portable zip artifacts for:
 - Windows
 - macOS
 
+## macOS Signing + Notarization (CI)
+
+The macOS job is configured to sign and notarize automatically.  
+You need to add the following GitHub repository secrets:
+
+- `APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64`
+- `APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD`
+- `APPLE_DEVELOPER_ID_APPLICATION_IDENTITY`
+- `APPLE_ID`
+- `APPLE_APP_SPECIFIC_PASSWORD`
+- `APPLE_TEAM_ID`
+
+If these secrets are missing, the macOS workflow will fail intentionally.
+
 Note:
 
 - A single executable cannot run on all OSes. The workflow generates one package per target OS.
