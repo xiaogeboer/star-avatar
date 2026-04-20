@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>体育明星头像下载</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="shell">
+        <section class="card hero">
+          <h1>体育明星头像下载</h1>
+          <p class="hint">球员名每行一个，或用逗号分隔。</p>
+
+          <textarea
+            id="players"
+            rows="8"
+            placeholder="Novak Djokovic&#10;Lionel Messi&#10;Kento Momota"
+          ></textarea>
+
+          <div class="controls">
+            <label>
+              图片尺寸
+              <div class="custom-select" id="size-select">
+                <input id="size" type="hidden" value="small" />
+                <button id="size-trigger" type="button" class="select-trigger">
+                  <span id="size-label">small</span>
+                </button>
+                <div id="size-menu" class="select-menu" hidden>
+                  <button type="button" class="select-option is-active" data-value="small">small</button>
+                  <button type="button" class="select-option" data-value="tiny">tiny</button>
+                  <button type="button" class="select-option" data-value="medium">medium</button>
+                  <button type="button" class="select-option" data-value="original">original</button>
+                </div>
+              </div>
+            </label>
+
+            <label>
+              请求间隔(秒)
+              <input id="delay" type="number" min="0" max="5" step="0.1" value="1.0" />
+            </label>
+          </div>
+
+          <label class="output-dir-group">
+            下载目录
+            <div class="inline">
+              <input id="output-dir" type="text" placeholder="例如: D:\sports_avatars" />
+              <button id="pick-dir" type="button" class="secondary">选择目录</button>
+            </div>
+            <span id="output-dir-meta" class="hint small"></span>
+          </label>
+
+          <button id="submit" type="button">开始下载</button>
+          <p id="status" class="status"></p>
+        </section>
+
+        <section class="card">
+          <h2>下载结果</h2>
+          <div id="results" class="results"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
