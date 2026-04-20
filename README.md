@@ -42,8 +42,8 @@ Output:
 
 Users can unzip and run directly:
 
-- Windows: `web_server.exe`
-- macOS/Linux: `web_server`
+- Windows: double-click `start.bat` (or run `sports-avatar-tool.exe`)
+- macOS: double-click `start.command` (or run `./sports-avatar-tool`)
 
 Default output folder in packaged mode:
 

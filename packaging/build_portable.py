@@ -47,6 +47,39 @@ def ensure_pyinstaller() -> None:
         ) from exc
 
 
+def write_launchers(output_dir: Path) -> None:
+    """Create one-click launch scripts that auto-resolve install directory."""
+    windows_launcher = output_dir / "start.bat"
+    windows_launcher.write_text(
+        (
+            "@echo off\r\n"
+            "setlocal\r\n"
+            "cd /d \"%~dp0\"\r\n"
+            "start \"\" \"%~dp0sports-avatar-tool.exe\"\r\n"
+        ),
+        encoding="utf-8",
+    )
+
+    mac_launcher = output_dir / "start.command"
+    mac_launcher.write_text(
+        (
+            "#!/bin/bash\n"
+            "set -e\n"
+            "DIR=\"$(cd \"$(dirname \"$0\")\" && pwd)\"\n"
+            "cd \"$DIR\"\n"
+            "xattr -dr com.apple.quarantine \"$DIR\" >/dev/null 2>&1 || true\n"
+            "chmod +x \"$DIR/sports-avatar-tool\" >/dev/null 2>&1 || true\n"
+            "exec \"$DIR/sports-avatar-tool\"\n"
+        ),
+        encoding="utf-8",
+    )
+    try:
+        mac_launcher.chmod(0o755)
+    except Exception:
+        # On Windows this may not apply; harmless for packaging.
+        pass
+
+
 def build() -> Path:
     ensure_pyinstaller()
 
@@ -75,14 +108,16 @@ def build() -> Path:
     )
 
     output_dir = DIST_DIR / APP_NAME
+    write_launchers(output_dir)
     readme_path = output_dir / "README_PORTABLE.txt"
     readme_path.write_text(
         (
             "Sports Avatar Tool (Portable)\n"
             "=============================\n\n"
             "1) Start the app:\n"
-            "   - Windows: run web_server.exe\n"
-            "   - macOS/Linux: run ./web_server\n\n"
+            "   - Windows: double-click start.bat or run sports-avatar-tool.exe\n"
+            "   - macOS: double-click start.command or run ./sports-avatar-tool\n"
+            "   - Linux: run ./sports-avatar-tool\n\n"
             "2) Open browser: http://127.0.0.1:8765\n\n"
             "3) Default output folder: ./avatars (next to executable)\n"
         ),
