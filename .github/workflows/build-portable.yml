@@ -10,6 +10,13 @@ jobs:
   build:
     name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    env:
+      APPLE_CERT_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64 }}
+      APPLE_CERT_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD }}
+      APPLE_IDENTITY: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_IDENTITY }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
     strategy:
       fail-fast: false
       matrix:
@@ -30,10 +37,7 @@ jobs:
         run: python packaging/build_portable.py
 
       - name: Configure Apple signing keychain
-        if: matrix.os == 'macos-latest' && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64 != '' && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD != ''
-        env:
-          APPLE_CERT_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64 }}
-          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD }}
+        if: matrix.os == 'macos-latest' && env.APPLE_CERT_BASE64 != '' && env.APPLE_CERT_PASSWORD != ''
         run: |
           KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
           CERT_PATH="$RUNNER_TEMP/developer-id.p12"
@@ -46,9 +50,7 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -s -k "" "$KEYCHAIN_PATH"
 
       - name: Codesign macOS binaries
-        if: matrix.os == 'macos-latest' && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64 != '' && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD != '' && secrets.APPLE_DEVELOPER_ID_APPLICATION_IDENTITY != ''
-        env:
-          APPLE_IDENTITY: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION_IDENTITY }}
+        if: matrix.os == 'macos-latest' && env.APPLE_CERT_BASE64 != '' && env.APPLE_CERT_PASSWORD != '' && env.APPLE_IDENTITY != ''
         run: |
           TARGET_DIR="dist/sports-avatar-tool"
           if [ ! -d "$TARGET_DIR" ]; then
@@ -63,7 +65,7 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "$TARGET_DIR/sports-avatar-tool"
 
       - name: Repack signed macOS archive
-        if: matrix.os == 'macos-latest' && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64 != '' && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD != '' && secrets.APPLE_DEVELOPER_ID_APPLICATION_IDENTITY != ''
+        if: matrix.os == 'macos-latest' && env.APPLE_CERT_BASE64 != '' && env.APPLE_CERT_PASSWORD != '' && env.APPLE_IDENTITY != ''
         run: |
           rm -f release/*macos*.zip
           ARCH="$(uname -m)"
@@ -72,11 +74,7 @@ jobs:
           echo "Repacked signed archive: $OUT"
 
       - name: Notarize macOS archive
-        if: matrix.os == 'macos-latest' && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64 != '' && secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD != '' && secrets.APPLE_DEVELOPER_ID_APPLICATION_IDENTITY != '' && secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' && secrets.APPLE_TEAM_ID != ''
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        if: matrix.os == 'macos-latest' && env.APPLE_CERT_BASE64 != '' && env.APPLE_CERT_PASSWORD != '' && env.APPLE_IDENTITY != '' && env.APPLE_ID != '' && env.APPLE_APP_PASSWORD != '' && env.APPLE_TEAM_ID != ''
         run: |
           ZIP_FILE="$(ls release/*macos*.zip | head -n 1)"
           if [ -z "$ZIP_FILE" ]; then
@@ -90,7 +88,7 @@ jobs:
             --wait
 
       - name: Notarization skipped notice
-        if: matrix.os == 'macos-latest' && (secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_BASE64 == '' || secrets.APPLE_DEVELOPER_ID_APPLICATION_CERT_PASSWORD == '' || secrets.APPLE_DEVELOPER_ID_APPLICATION_IDENTITY == '' || secrets.APPLE_ID == '' || secrets.APPLE_APP_SPECIFIC_PASSWORD == '' || secrets.APPLE_TEAM_ID == '')
+        if: matrix.os == 'macos-latest' && (env.APPLE_CERT_BASE64 == '' || env.APPLE_CERT_PASSWORD == '' || env.APPLE_IDENTITY == '' || env.APPLE_ID == '' || env.APPLE_APP_PASSWORD == '' || env.APPLE_TEAM_ID == '')
         run: |
           echo "Apple signing/notarization secrets not configured. Built unsigned macOS package."
 
