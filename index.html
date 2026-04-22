@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>体育明星头像库</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue',sans-serif;
+    background:#000;
+    color:#f5f5f7;min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+  .page-wrap{min-height:100vh;display:flex;flex-direction:column;justify-content:space-between}
+
+  /* Container */
+  .container{max-width:1080px;margin:0 auto;padding:0 24px;width:100%}
+  .search-bar + .container{padding-top:24px}
+
+  /* Search area */
+  .search-section{
+    text-align:center;padding:96px 0 24px;position:relative;overflow:visible;
+  }
+  /* === Aurora (注释备用) === */
+  /*
+  .aurora{
+    position:absolute;top:-40%;left:-20%;right:-20%;height:160%;pointer-events:none;
+    overflow:hidden;z-index:0;
+  }
+  .aurora-blob{
+    position:absolute;border-radius:50%;filter:blur(80px);mix-blend-mode:screen;
+    animation-timing-function:ease-in-out;animation-iteration-count:infinite;
+  }
+  .aurora-blob:nth-child(1){
+    width:50%;height:60%;top:-10%;left:10%;
+    background:rgba(10,132,255,.22);
+    animation:aurora1 8s ease-in-out infinite alternate;
+  }
+  .aurora-blob:nth-child(2){
+    width:45%;height:55%;top:0;right:5%;
+    background:rgba(94,92,230,.18);
+    animation:aurora2 10s ease-in-out infinite alternate;
+  }
+  .aurora-blob:nth-child(3){
+    width:40%;height:50%;top:10%;left:30%;
+    background:rgba(191,90,242,.15);
+    animation:aurora3 12s ease-in-out infinite alternate;
+  }
+  .aurora-blob:nth-child(4){
+    width:35%;height:45%;top:-5%;right:25%;
+    background:rgba(48,209,88,.12);
+    animation:aurora4 9s ease-in-out infinite alternate;
+  }
+  .aurora-fade{
+    position:absolute;bottom:0;left:0;right:0;height:50%;
+    background:linear-gradient(to bottom,transparent,#000);
+    pointer-events:none;
+  }
+  @keyframes aurora1{0%{transform:translate(0,0) scale(1)}100%{transform:translate(10%,15%) scale(1.15)}}
+  @keyframes aurora2{0%{transform:translate(0,0) scale(1)}100%{transform:translate(-12%,10%) scale(1.1)}}
+  @keyframes aurora3{0%{transform:translate(0,0) scale(1)}100%{transform:translate(8%,-8%) scale(1.2)}}
+  @keyframes aurora4{0%{transform:translate(0,0) scale(1)}100%{transform:translate(-6%,12%) scale(1.1)}}
+  */
+
+  /* === Light Rays (ReactBits WebGL) - 全页背景 === */
+  .light-rays-canvas{
+    position:fixed;top:0;left:0;width:100vw;height:100vh;
+    pointer-events:none;z-index:0;
+  }
+  .light-rays-fade{
+    position:fixed;bottom:0;left:0;right:0;height:40%;
+    background:linear-gradient(to bottom,transparent,#000);
+    pointer-events:none;z-index:1;
+  }
+  .page-wrap{position:relative;z-index:2}
+  .search-section > *:not(.aurora){position:relative;z-index:1}
+  .search-title{font-size:40px;font-weight:700;color:#f5f5f7;margin-bottom:8px;letter-spacing:-.02em}
+  .flag-wave{display:inline-block;animation:flagWave 2.4s ease-in-out infinite}
+  @keyframes flagWave{
+    0%,100%{transform:translateY(0)}
+    50%{transform:translateY(-6px)}
+  }
+  .search-subtitle{color:rgba(255,255,255,.44);font-size:15px;margin-bottom:0;font-weight:400;line-height:1.5}
+
+  /* 搜索 bar - 吸顶，带毛玻璃 */
+  .search-bar{
+    position:sticky;top:0;z-index:100;
+    background:transparent;
+    border-bottom:1px solid transparent;
+    transition:none;
+    padding:14px 24px;
+    margin-bottom:0;
+  }
+  .search-bar.is-fixed{
+    background:rgba(22,22,23,.82);
+    backdrop-filter:blur(20px) saturate(180%);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    border-bottom-color:rgba(255,255,255,.06);
+    box-shadow:0 1px 0 rgba(255,255,255,.04);
+  }
+
+  .search-box{
+    display:flex;max-width:580px;margin:0 auto;gap:10px;position:relative;
+  }
+  .search-box input{
+    flex:1;padding:12px 40px 12px 20px;border-radius:980px;border:1px solid rgba(255,255,255,.1);
+    background:rgba(28,28,30,.35);color:#f5f5f7;font-size:16px;outline:none;
+    transition:all .3s cubic-bezier(.4,0,.2,1);
+    backdrop-filter:blur(24px) saturate(180%);
+    -webkit-backdrop-filter:blur(24px) saturate(180%);
+    border:1px solid rgba(255,255,255,.18);
+  }
+  .search-box input.shake{
+    border-color:#0a84ff;box-shadow:0 0 0 3px rgba(10,132,255,.25);
+  }
+  .search-box input:focus{border-color:#0a84ff;box-shadow:0 0 0 3px rgba(10,132,255,.2)}
+  .search-box input::placeholder{color:rgba(255,255,255,.35)}
+  .search-box .search-clear{
+    position:absolute;right:98px;top:50%;transform:translateY(-50%);
+    width:48px;height:48px;border-radius:50%;border:none;
+    background:transparent;color:rgba(255,255,255,.3);
+    cursor:pointer;display:none;align-items:center;justify-content:center;
+    padding:0;font-size:0;min-width:0;
+    font-weight:400;white-space:normal;
+  }
+  .search-box .search-clear.visible{display:flex}
+  .search-box .search-clear svg{display:block}
+  .search-box button{
+    padding:12px 28px;border-radius:980px;border:none;
+    background:#0a84ff;
+    color:#fff;font-size:16px;font-weight:500;cursor:pointer;
+    transition:all .3s cubic-bezier(.4,0,.2,1);white-space:nowrap;
+    min-width:88px;
+  }
+  .search-box button:hover{background:#409cff}
+  .search-box .search-clear:hover{background:transparent}
+  .search-box button:active{background:#0070e0;transform:scale(.98)}
+  .search-box button:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+  /* Section headers */
+  .section-header{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:16px;
+  }
+  .section-header h2{font-size:24px;font-weight:700;color:#f5f5f7;letter-spacing:-.01em}
+  .section-header .badge{
+    background:rgba(255,255,255,.08);color:rgba(255,255,255,.55);
+    padding:2px 10px;border-radius:980px;font-size:13px;font-weight:500;
+    line-height:1;vertical-align:middle;
+  }
+  .section-header button{padding:6px 16px;border-radius:980px;border:none;background:rgba(255,255,255,.08);color:rgba(245,245,247,.6);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;
+  }
+  .section-header button:hover{background:rgba(255,255,255,.14)}
+  .section-header button svg{display:block;position:relative;top:.5px}
+
+  /* Player cards grid */
+  .players-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+    gap:16px;margin-bottom:48px;
+  }
+  .player-card{
+    background:rgba(28,28,30,.45);border:1px solid rgba(255,255,255,.1);
+    border-radius:18px;padding:22px;transition:all .3s cubic-bezier(.4,0,.2,1);
+    animation:fadeIn .5s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 1px 2px rgba(0,0,0,.3);
+    backdrop-filter:blur(20px) saturate(180%);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    position:relative;overflow:hidden;
+  }
+  .player-card .spotlight-overlay{
+    position:absolute;inset:0;pointer-events:none;
+    opacity:0;transition:opacity .5s ease-in-out;
+    border-radius:18px;
+  }
+  .player-card:hover .spotlight-overlay{opacity:1}
+  .player-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.5);transform:translateY(-1px)}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+  .player-top{display:flex;gap:16px;margin-bottom:14px}
+  .player-avatar{
+    width:80px;height:80px;border-radius:16px;object-fit:cover;
+    background:#2c2c2e;flex-shrink:0;
+  }
+  .player-avatar-placeholder{
+    width:80px;height:80px;border-radius:16px;
+    background:#2c2c2e;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-size:32px;color:rgba(255,255,255,.3);
+  }
+  .player-info h3{font-size:17px;font-weight:600;color:#f5f5f7;margin-bottom:4px;letter-spacing:-.01em}
+  .player-meta{font-size:13px;color:rgba(255,255,255,.55);line-height:1.7}
+  .player-meta .sport-tag{
+    display:inline-block;padding:2px 10px;border-radius:980px;font-size:12px;
+    background:rgba(255,255,255,.06);color:rgba(255,255,255,.55);font-weight:500;
+  }
+
+  .player-actions{display:flex;flex-wrap:wrap;gap:6px}
+  .btn-dl{
+    flex:1;padding:6px 14px;border-radius:980px;border:none;
+    background:rgba(255,255,255,.08);color:#f5f5f7;font-size:13px;font-weight:500;
+    cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
+  }
+  .btn-dl:hover{background:rgba(255,255,255,.14)}
+  .btn-dl:disabled{opacity:.4;cursor:not-allowed}
+  .btn-dl.downloading{pointer-events:none}
+  .btn-dl.done{background:#0a84ff;color:#fff}
+  .btn-dl-all{
+    width:100%;margin-top:8px;padding:8px;border-radius:980px;
+    border:none;background:rgba(255,255,255,.08);
+    color:#f5f5f7;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;
+  }
+  .btn-dl-all:hover{background:rgba(255,255,255,.14)}
+
+  /* Gallery grid */
+  .gallery-section{margin-top:0;padding:0}
+  .gallery-grid{
+    display:grid;grid-template-columns:repeat(6,1fr);
+    gap:16px;
+  }
+  .gallery-item{
+    background:rgba(28,28,30,.45);border:1px solid rgba(255,255,255,.1);
+    border-radius:16px;overflow:hidden;transition:all .3s cubic-bezier(.4,0,.2,1);
+    animation:fadeIn .5s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 1px 2px rgba(0,0,0,.3);
+    backdrop-filter:blur(20px) saturate(180%);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+  }
+  .gallery-item:hover{box-shadow:0 4px 16px rgba(0,0,0,.5)}
+  .gallery-img-wrap{
+    width:100%;aspect-ratio:1;overflow:hidden;cursor:pointer;
+    background:#141414;
+  }
+  .gallery-img-wrap img{width:100%;height:100%;object-fit:cover;transition:transform .4s cubic-bezier(.4,0,.2,1)}
+  .gallery-item:hover .gallery-img-wrap img{transform:scale(1.04)}
+  .gallery-meta{padding:12px 14px}
+  .gallery-meta .name{font-size:13px;color:#f5f5f7;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .gallery-meta .size{font-size:12px;color:rgba(255,255,255,.4);margin-top:2px}
+  .gallery-meta .actions{display:flex;gap:6px;margin-top:8px}
+  .gallery-meta .actions button{
+    display:flex;align-items:center;justify-content:center;
+    height:26px;flex:1;padding:0;border-radius:980px;font-size:12px;font-weight:500;cursor:pointer;
+    border:none;background:rgba(255,255,255,.06);color:rgba(255,255,255,.55);transition:all .2s;
+  }
+  .gallery-meta .actions button svg{display:block;position:relative;top:.5px;flex-shrink:0}
+  .gallery-meta .actions .btn-del:hover{background:rgba(255,59,48,.15);color:#ff453a}
+
+  /* Empty state */
+  .empty-state{
+    text-align:center;padding:56px 20px;color:rgba(255,255,255,.35);
+  }
+  .empty-state .icon{font-size:48px;margin-bottom:12px;color:#f5f5f7}
+  .empty-state p{font-size:15px}
+
+  /* Loading */
+  .loading{text-align:center;padding:40px;color:rgba(255,255,255,.55)}
+  .spinner{
+    display:inline-block;width:20px;height:20px;
+    border:2px solid rgba(255,255,255,.1);border-top-color:#0a84ff;
+    border-radius:50%;animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* Toast */
+  .toast-container{position:fixed;top:80px;right:20px;z-index:1000;display:flex;flex-direction:column;gap:8px}
+  .toast{
+    padding:12px 20px;border-radius:14px;font-size:14px;font-weight:500;
+    animation:slideIn .35s cubic-bezier(.4,0,.2,1);min-width:260px;
+    border:none;
+    box-shadow:0 4px 16px rgba(0,0,0,.5);
+  }
+  @keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+  .toast.success{background:#1c1c1e;color:#f5f5f7;border:1px solid rgba(255,255,255,.06)}
+  .toast.error{background:#1c1c1e;color:#ff453a;border:1px solid rgba(255,59,48,.2)}
+
+  /* Lightbox */
+  .lightbox{
+    position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;
+    display:none;align-items:center;justify-content:center;cursor:pointer;
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+  }
+  .lightbox.active{display:flex}
+  .lightbox img{max-width:90%;max-height:90%;border-radius:12px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.6)}
+  .lightbox-close{
+    position:absolute;top:20px;right:20px;width:36px;height:36px;border-radius:50%;
+    border:none;background:rgba(255,255,255,.12);color:#fff;font-size:18px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:background .2s;z-index:201;
+  }
+  .lightbox-close:hover{background:rgba(255,255,255,.24)}
+  .lightbox-close svg{display:block}
+
+  /* Responsive */
+  @media(max-width:600px){
+    .search-box{flex-direction:column}
+    .players-grid{grid-template-columns:1fr}
+    .gallery-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+    .header h1{font-size:16px}
+    .search-title{font-size:28px}
+  }
+
+  /* Footer */
+  .footer{
+    height:80px;display:flex;align-items:center;justify-content:center;
+    font-size:11px;color:rgba(255,255,255,.24);margin-top:32px;gap:4px;
+  }
+  .footer-avatar{
+    width:13px;height:13px;border-radius:50%;object-fit:cover;
+    vertical-align:middle;
+  }
+</style>
+</head>
+<body>
+<canvas class="light-rays-canvas" id="lightRaysCanvas"></canvas>
+<div class="light-rays-fade"></div>
+<div class="page-wrap">
+<div class="container">
+  <!-- Search -->
+  <section class="search-section">
+    <!-- Aurora (注释备用) -->
+    <!--
+    <div class="aurora">
+      <div class="aurora-blob"></div>
+      <div class="aurora-blob"></div>
+      <div class="aurora-blob"></div>
+      <div class="aurora-blob"></div>
+      <div class="aurora-fade"></div>
+    </div>
+    -->
+    <div class="search-title"><span class="flag-wave" style="animation-delay:0s">🇨🇳</span> <span class="flag-wave" style="animation-delay:.3s">🇦🇷</span> <span class="flag-wave" style="animation-delay:.6s">🇧🇷</span>&nbsp;&nbsp;&nbsp;体育明星头像库&nbsp;&nbsp;&nbsp;<span class="flag-wave" style="animation-delay:.15s">🇺🇸</span> <span class="flag-wave" style="animation-delay:.45s">🇫🇷</span> <span class="flag-wave" style="animation-delay:.75s">🇩🇪</span></div>
+    <div class="search-subtitle">请输入运动员名字搜索，外国运动员建议使用英文名字</div>
+  </section>
+</div>
+<div class="search-bar" id="searchBar">
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="输入运动员 中文名/英文名"
+           onkeydown="if(event.key==='Enter')doSearch()" oninput="toggleClearBtn()">
+    <button class="search-clear" id="clearBtn" onclick="clearSearch()" type="button">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+    <button id="searchBtn" onclick="doSearch()">搜索</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Search results -->
+  <div id="resultsArea"></div>
+
+  <!-- Gallery -->
+  <section class="gallery-section" id="gallery-section">
+    <div class="section-header">
+      <h2>已下载图片 <span class="badge" id="galleryCount">0</span></h2>
+      <div style="display:flex;gap:6px">
+        <button onclick="loadGallery()" title="刷新">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+        </button>
+        <button onclick="openFolder()" title="打开文件夹">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+        </button>
+      </div>
+    </div>
+    <div id="galleryArea">
+      <div class="empty-state">
+        <div class="icon">&#128247;</div>
+        <p>还没有下载的图片，搜索球员并下载头像吧！</p>
+      </div>
+    </div>
+  </section>
+</div><!-- /container -->
+<footer class="footer">2026&nbsp;&nbsp;·&nbsp;&nbsp;Designed & Engineered by Yuku OTT Design&nbsp;&nbsp;·&nbsp;&nbsp;@Ying ke</footer>
+</div><!-- /page-wrap -->
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="event.stopPropagation();closeLightbox()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+  </button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const SPORT_ICONS = {
+  'Soccer':'&#9917;','Basketball':'&#127936;','Football':'&#127944;',
+  'Tennis':'&#127934;','Baseball':'&#9918;','Ice Hockey':'&#127954;',
+  'Golf':'&#9971;','Boxing':'&#129354;','MMA':'&#129354;',
+  'Cricket':'&#127951;','Rugby':'&#127944;','Motorsport':'&#127950;',
+};
+
+function getSportIcon(sport) {
+  return SPORT_ICONS[sport] || '&#127941;';
+}
+
+const IMAGE_FIELDS = [
+  {key:'strThumb', type:'thumb', label:'\u7f29\u7565\u56fe'},
+  {key:'strCutout', type:'cutout', label:'\u6263\u56fe'},
+  {key:'strRender', type:'render', label:'\u6e32\u67d3\u56fe'},
+  {key:'strFanart1', type:'fanart1', label:'\u7c89\u4e1d\u56fe1'},
+  {key:'strFanart2', type:'fanart2', label:'\u7c89\u4e1d\u56fe2'},
+  {key:'strFanart3', type:'fanart3', label:'\u7c89\u4e1d\u56fe3'},
+  {key:'strFanart4', type:'fanart4', label:'\u7c89\u4e1d\u56fe4'},
+  {key:'strBanner', type:'banner', label:'\u6a2a\u5e45'},
+];
+
+// 流式搜索状态
+let streamState = { es: null, cardIdx: 0, sources: {}, receivedApis: [] };
+
+function toggleClearBtn() {
+  var input = document.getElementById('searchInput');
+  var btn = document.getElementById('clearBtn');
+  if (input && btn) {
+    btn.classList.toggle('visible', input.value.length > 0);
+  }
+}
+function clearSearch() {
+  var input = document.getElementById('searchInput');
+  if (input) {
+    input.value = '';
+    input.focus();
+    toggleClearBtn();
+  }
+}
+
+function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) {
+    var input = document.getElementById('searchInput');
+    input.classList.add('shake');
+    setTimeout(function(){ input.classList.remove('shake'); }, 600);
+    return;
+  }
+
+  // 关闭之前的 EventSource
+  if (streamState.es) {
+    streamState.es.close();
+  }
+
+  // 重置状态
+  streamState = { es: null, cardIdx: 0, sources: {}, receivedApis: [] };
+
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" style="animation:spin .8s linear infinite" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M12 2a10 10 0 0 1 10 10"/></svg>';
+
+  // 初始化结果区域结构
+  const area = document.getElementById('resultsArea');
+  area.innerHTML =
+    '<div class="section-header"><h2>\u641c\u7d22\u7ed3\u679c <span class="badge" id="resultBadge">0</span></h2></div>' +
+    '<div id="sourceTags" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>' +
+    '<div id="searchStatus" style="color:rgba(255,255,255,.45);font-size:13px;margin-bottom:12px">\u6b63\u5728\u641c\u7d22 TheSportsDB\u3001ESPN\u3001Wikidata...</div>' +
+    '<div class="players-grid" id="playersGrid"></div>';
+
+  // 创建 EventSource 连接流式搜索端点
+  const es = new EventSource('/api/search-stream?q=' + encodeURIComponent(q));
+  streamState.es = es;
+
+  es.addEventListener('result', function(e) {
+    const data = JSON.parse(e.data);
+    appendStreamResults(data);
+  });
+
+  es.addEventListener('done', function(e) {
+    const data = JSON.parse(e.data);
+    finalizeStreamSearch(data);
+    es.close();
+    btn.disabled = false;
+    btn.textContent = '\u641c\u7d22';
+  });
+
+  es.onerror = function(e) {
+    if (e.target.readyState === EventSource.CLOSED) return;
+    showToast('\u641c\u7d22\u5931\u8d25', 'error');
+    btn.disabled = false;
+    btn.textContent = '\u641c\u7d22';
+    es.close();
+  };
+}
+
+function quickSearch(name) {
+  document.getElementById('searchInput').value = name;
+  doSearch();
+}
+
+function getSourceStyle(apiSource) {
+  if (apiSource === 'TheSportsDB') {
+    return { color: '#30d158', bg: 'rgba(48,209,88,.12)' };
+  } else if (apiSource === 'ESPN') {
+    return { color: '#ff9f0a', bg: 'rgba(255,159,10,.12)' };
+  } else if (apiSource === 'Wikidata') {
+    return { color: '#64d2ff', bg: 'rgba(100,210,255,.12)' };
+  } else if (apiSource === 'Wikidata+Wikipedia') {
+    return { color: '#bf5af2', bg: 'rgba(191,90,242,.12)' };
+  }
+  return { color: 'rgba(255,255,255,.45)', bg: 'rgba(255,255,255,.05)' };
+}
+
+function buildPlayerCardHTML(p, idx) {
+  const name = p.strPlayer || 'Unknown';
+  const sport = p.strSport || 'Unknown';
+  const team = p.strTeam || '-';
+  const nation = p.strNationality || '-';
+  const position = p.strPosition || '';
+  const thumb = p.strThumb;
+  const apiSource = p.api_source || 'Unknown';
+  const style = getSourceStyle(apiSource);
+  const available = IMAGE_FIELDS.filter(f => p[f.key]);
+
+  let html = '<div class="player-card" style="animation-delay:' + (idx * 0.08) + 's" onmousemove="spotlightMove(event,this)" onmouseleave="spotlightLeave(this)">';
+  html += '<div class="spotlight-overlay"></div>';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+  html += '<span style="background:' + style.bg + ';color:' + style.color + ';padding:2px 10px;border-radius:980px;font-size:11px;font-weight:600">' + apiSource + '</span>';
+  html += '</div>';
+  html += '<div class="player-top">';
+
+  if (thumb) {
+    html += '<img class="player-avatar" src="/api/proxy-image?url=' + encodeURIComponent(thumb) + '" alt="' + escHtml(name) + '" loading="lazy">';
+  } else {
+    html += '<div class="player-avatar-placeholder">&#127941;</div>';
+  }
+
+  html += '<div class="player-info">';
+  html += '<h3>' + escHtml(name) + '</h3>';
+  html += '<div class="player-meta">';
+  html += '<span class="sport-tag">' + getSportIcon(sport) + ' ' + escHtml(sport) + '</span><br>';
+  html += escHtml(team);
+  html += '</div></div></div>';
+
+  if (available.length > 0) {
+    html += '<div class="player-actions">';
+    available.forEach(img => {
+      const btnId = 'btn-' + idx + '-' + img.type;
+      html += '<button class="btn-dl" id="' + btnId + '" onclick="dlImage(\'' + btnId + '\',\'' + escAttr(p[img.key]) + '\',\'' + escAttr(name) + '\',\'' + img.type + '\')">' + img.label + '</button>';
+    });
+    html += '</div>';
+    if (available.length > 1) {
+      const allId = 'btnAll-' + idx;
+      html += '<button class="btn-dl-all" id="' + allId + '" onclick="dlAll(\'' + allId + '\',' + idx + ')">\u5168\u90e8\u4e0b\u8f7d (' + available.length + ')</button>';
+    }
+  } else {
+    html += '<div style="color:rgba(255,255,255,.35);font-size:13px;text-align:center;padding:8px">\u6682\u65e0\u53ef\u7528\u56fe\u7247</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function buildSourceTagsHTML(sources) {
+  let html = '';
+  const apis = [
+    { key: 'TheSportsDB', color: '#30d158', bg: 'rgba(48,209,88,.12)', label: 'TheSportsDB' },
+    { key: 'ESPN', color: '#ff9f0a', bg: 'rgba(255,159,10,.12)', label: 'ESPN' },
+    { key: 'Wikidata', color: '#64d2ff', bg: 'rgba(100,210,255,.12)', label: 'Wikidata' },
+    { key: 'Wikidata+Wikipedia', color: '#bf5af2', bg: 'rgba(191,90,242,.12)', label: 'Wikipedia\u8865\u5145' },
+  ];
+  apis.forEach(api => {
+    const count = sources[api.key] || 0;
+    if (count > 0) {
+      html += '<span style="background:' + api.bg + ';color:' + api.color + ';padding:4px 12px;border-radius:980px;font-size:13px;font-weight:500">\u2713 ' + api.label + ': ' + count + '</span>';
+    }
+  });
+  return html;
+}
+
+function appendStreamResults(data) {
+  const grid = document.getElementById('playersGrid');
+  const badge = document.getElementById('resultBadge');
+  const sourceTags = document.getElementById('sourceTags');
+  const status = document.getElementById('searchStatus');
+  if (!grid) return;
+
+  const apiName = data.api;
+  const players = data.players || [];
+
+  // 记录已收到的 API
+  if (!streamState.receivedApis.includes(apiName)) {
+    streamState.receivedApis.push(apiName);
+  }
+
+  // 统计来源
+  players.forEach(p => {
+    const source = p.api_source || apiName;
+    streamState.sources[source] = (streamState.sources[source] || 0) + 1;
+  });
+
+  // 更新来源标签
+  sourceTags.innerHTML = buildSourceTagsHTML(streamState.sources);
+
+  // 更新状态文字
+  const pending = ['TheSportsDB', 'ESPN', 'Wikidata'].filter(a => !streamState.receivedApis.includes(a));
+  if (pending.length > 0) {
+    status.textContent = '\u5df2\u6536\u5230 ' + streamState.receivedApis.join('\u3001') + ' \u7ed3\u679c\uff0c\u7b49\u5f85 ' + pending.join('\u3001') + '...';
+  } else {
+    status.textContent = '\u6240\u6709 API \u7ed3\u679c\u5df2\u8fd4\u56de\uff0c\u5904\u7406\u4e2d...';
+  }
+
+  // 追加渲染卡片
+  const fragment = document.createElement('div');
+  players.forEach(p => {
+    const cardHtml = buildPlayerCardHTML(p, streamState.cardIdx);
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = cardHtml;
+    const card = wrapper.firstElementChild;
+    grid.appendChild(card);
+    streamState.cardIdx++;
+  });
+
+  // 更新总数
+  streamState.totalCount = (streamState.totalCount || 0) + players.length;
+  badge.textContent = streamState.totalCount;
+
+  // 维护全局 players 数组（用于下载）
+  if (!window._players) window._players = [];
+  window._players = window._players.concat(players);
+}
+
+function finalizeStreamSearch(data) {
+  const badge = document.getElementById('resultBadge');
+  const sourceTags = document.getElementById('sourceTags');
+  const status = document.getElementById('searchStatus');
+
+  if (badge) badge.textContent = data.total;
+  if (sourceTags) sourceTags.innerHTML = buildSourceTagsHTML(data.sources);
+  if (status) {
+    if (data.total === 0) {
+      status.innerHTML = '<div class="empty-state" style="margin-top:24px"><div class="icon">&#9917; &#127936; &#127934;</div><p>\u672a\u627e\u5230\u8be5\u7403\u5458\uff0c\u8bf7\u68c0\u67e5\u62fc\u5199\u540e\u91cd\u8bd5</p></div>';
+    } else {
+      status.innerHTML = '<span style="color:rgba(255,255,255,.45)">\u2713 \u641c\u7d22\u5b8c\u6210\uff0c\u5171 ' + data.total + ' \u4e2a\u7ed3\u679c\uff0c\u8017\u65f6 ' + data.time + 's</span>';
+    }
+  }
+}
+
+function renderPlayers(data) {
+  const area = document.getElementById('resultsArea');
+  const players = data.player || [];
+  const sources = data.sources || {};
+  const total = data.total || players.length;
+
+  if (!players.length) {
+    area.innerHTML = '<div class="empty-state"><div class="icon">&#9917; &#127936; &#127934;</div><p>\u672a\u627e\u5230\u8be5\u7403\u5458\uff0c\u8bf7\u68c0\u67e5\u62fc\u5199\u540e\u91cd\u8bd5</p></div>';
+    return;
+  }
+
+  let html = '<div class="section-header"><h2>\u641c\u7d22\u7ed3\u679c <span class="badge">' + total + '</span></h2></div>';
+  html += '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">' + buildSourceTagsHTML(sources) + '</div>';
+  html += '<div class="players-grid">';
+
+  players.forEach((p, idx) => {
+    html += buildPlayerCardHTML(p, idx);
+  });
+
+  html += '</div>';
+  area.innerHTML = html;
+
+  window._players = players;
+}
+
+async function dlImage(btnId, url, playerName, imageType) {
+  const btn = document.getElementById(btnId);
+  if (!btn || btn.classList.contains('done')) return;
+  const origText = btn.textContent;
+  btn.classList.add('downloading');
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px"></span>';
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch('/api/download', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({url, playerName, imageType}),
+    });
+    const data = await resp.json();
+    if (data.success) {
+      btn.classList.remove('downloading');
+      btn.classList.add('done');
+      btn.innerHTML = '&#10003; ' + origText;
+      showToast('\u5df2\u4fdd\u5b58: ' + data.filename + ' (' + formatSize(data.size) + ')', 'success');
+      loadGallery();
+    } else {
+      throw new Error(data.error || '\u5931\u8d25');
+    }
+  } catch(e) {
+    btn.classList.remove('downloading');
+    btn.disabled = false;
+    btn.textContent = origText;
+    showToast('\u4e0b\u8f7d\u5931\u8d25: ' + e.message, 'error');
+  }
+}
+
+async function dlAll(btnId, playerIdx) {
+  const player = window._players[playerIdx];
+  if (!player) return;
+  const btn = document.getElementById(btnId);
+  const available = IMAGE_FIELDS.filter(f => player[f.key]);
+  btn.disabled = true;
+
+  for (let i = 0; i < available.length; i++) {
+    btn.textContent = '\u6b63\u5728\u4e0b\u8f7d ' + (i+1) + '/' + available.length + '...';
+    const img = available[i];
+    const subBtnId = 'btn-' + playerIdx + '-' + img.type;
+    await dlImage(subBtnId, player[img.key], player.strPlayer, img.type);
+  }
+
+  btn.textContent = '\u5168\u90e8\u5b8c\u6210!';
+  btn.style.background = '#0a84ff';
+  btn.style.color = '#fff';
+}
+
+function loadGallery() {
+  fetch('/api/gallery')
+    .then(r => r.json())
+    .then(files => {
+      document.getElementById('galleryCount').textContent = files.length;
+      const area = document.getElementById('galleryArea');
+
+      if (!files.length) {
+        area.innerHTML = '<div class="empty-state"><div class="icon">&#9917; &#127936; &#127934;</div><p>\u8fd8\u6ca1\u6709\u4e0b\u8f7d\u7684\u56fe\u7247\uff0c\u641c\u7d22\u7403\u5458\u5e76\u4e0b\u8f7d\u5934\u50cf\u5427\uff01</p></div>';
+        return;
+      }
+
+      let html = '<div class="gallery-grid">';
+      files.forEach((f, idx) => {
+        const src = '/sports_avatars/' + encodeURIComponent(f.filename);
+        html += '<div class="gallery-item">';
+        html += '<div class="gallery-img-wrap" onclick="openLightbox(\'' + escAttr(src) + '\')">';
+        html += '<img src="' + escHtml(src) + '" alt="' + escHtml(f.filename) + '" loading="lazy">';
+        html += '</div>';
+        html += '<div class="gallery-meta">';
+        html += '<div class="name" title="' + escHtml(f.filename) + '">' + escHtml(f.filename) + '</div>';
+        html += '<div class="size">' + formatSize(f.size) + '</div>';
+        html += '<div class="actions">';
+        html += '<button class="btn-del" onclick="deleteFile(\'' + escAttr(f.filename) + '\')">\u5220\u9664</button>';
+        html += '</div></div></div>';
+      });
+      html += '</div>';
+      area.innerHTML = html;
+    })
+    .catch(() => {});
+}
+
+function deleteFile(filename) {
+  if (!confirm('\u786e\u8ba4\u5220\u9664 ' + filename + ' \uff1f')) return;
+  fetch('/api/delete', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({filename}),
+  }).then(r => r.json()).then(data => {
+    if (data.success) {
+      showToast('\u5df2\u5220\u9664: ' + filename, 'success');
+      loadGallery();
+    } else {
+      showToast('\u5220\u9664\u5931\u8d25', 'error');
+    }
+  }).catch(() => showToast('\u5220\u9664\u5931\u8d25', 'error'));
+}
+
+function openFolder() {
+  fetch('/api/open-folder').then(r => r.json()).then(data => {
+    if (!data.success) showToast('\u6253\u5f00\u6587\u4ef6\u5939\u5931\u8d25', 'error');
+  }).catch(() => showToast('\u6253\u5f00\u6587\u4ef6\u5939\u5931\u8d25', 'error'));
+}
+
+function openLightbox(src) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightbox').classList.add('active');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('active');
+  document.getElementById('lightboxImg').src = '';
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeLightbox(); });
+
+function showToast(msg, type) {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3000);
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  return (bytes / 1024).toFixed(1) + ' KB';
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+function escAttr(s) {
+  return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+}
+
+// 搜索栏吸顶：sticky 定位，搜索栏真正到达顶部时才显示毛玻璃背景
+(function() {
+  var bar = document.getElementById('searchBar');
+  if (!bar) return;
+
+  // 记录搜索栏的初始位置，避免 offsetParent 变化导致阈值漂移
+  var threshold = bar.getBoundingClientRect().top + window.scrollY;
+
+  window.addEventListener('scroll', function() {
+    if (window.scrollY >= threshold) {
+      bar.classList.add('is-fixed');
+    } else {
+      bar.classList.remove('is-fixed');
+    }
+  }, { passive: true });
+})();
+
+// Spotlight card effect (ReactBits SpotlightCard)
+function spotlightMove(e, el) {
+  var overlay = el.querySelector('.spotlight-overlay');
+  if (!overlay) return;
+  var rect = el.getBoundingClientRect();
+  var x = e.clientX - rect.left;
+  var y = e.clientY - rect.top;
+  overlay.style.background = 'radial-gradient(circle at ' + x + 'px ' + y + 'px, rgba(10,132,255,0.15), transparent 70%)';
+}
+function spotlightLeave(el) {
+  var overlay = el.querySelector('.spotlight-overlay');
+  if (overlay) overlay.style.background = '';
+}
+
+// Init
+loadGallery();
+
+// === Light Rays WebGL (from ReactBits) ===
+(function(){
+  var canvas = document.getElementById('lightRaysCanvas');
+  if (!canvas) return;
+  var gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: true });
+  if (!gl) return;
+  gl.clearColor(0,0,0,0);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+  var vertSrc = 'attribute vec2 position;void main(){gl_Position=vec4(position,0.0,1.0);}';
+  var fragSrc = [
+    'precision highp float;',
+    'uniform float iTime;uniform vec2 iResolution;',
+    'uniform vec2 rayPos;uniform vec2 rayDir;uniform vec3 raysColor;',
+    'uniform float raysSpeed;uniform float lightSpread;uniform float rayLength;',
+    'uniform float fadeDistance;uniform float saturation;',
+    'uniform float noiseAmount;uniform float distortion;uniform float pulsating;',
+    'uniform float multiColor;',
+    'float noise(vec2 st){return fract(sin(dot(st,vec2(12.9898,78.233)))*43758.5453);}',
+    'float rayStrength(vec2 src,vec2 refDir,vec2 coord,float sA,float sB,float spd){',
+    '  vec2 sc=coord-src;vec2 dn=normalize(sc);float ca=dot(dn,refDir);',
+    '  float da=ca+distortion*sin(iTime*2.0+length(sc)*0.01)*0.2;',
+    '  float sf=pow(max(da,0.0),1.0/max(lightSpread,0.001));',
+    '  float d=length(sc);float md=iResolution.x*rayLength;',
+    '  float lf=clamp((md-d)/md,0.0,1.0);',
+    '  float ff=clamp((iResolution.x*fadeDistance-d)/(iResolution.x*fadeDistance),0.5,1.0);',
+    '  float pulse=pulsating>0.5?(0.8+0.2*sin(iTime*spd*3.0)):1.0;',
+    '  float bs=clamp((0.45+0.15*sin(da*sA+iTime*spd))+(0.3+0.2*cos(-da*sB+iTime*spd)),0.0,1.0);',
+    '  return bs*lf*ff*sf*pulse;',
+    '}',
+    'void main(){',
+    '  vec2 coord=vec2(gl_FragCoord.x,iResolution.y-gl_FragCoord.y);',
+    '  vec4 r1=vec4(1.0)*rayStrength(rayPos,rayDir,coord,36.2214,21.11349,1.5*raysSpeed);',
+    '  vec4 r2=vec4(1.0)*rayStrength(rayPos,rayDir,coord,22.3991,18.0234,1.1*raysSpeed);',
+    '  vec4 c=r1*0.5+r2*0.4;',
+    '  if(noiseAmount>0.0){float n=noise(coord*0.01+iTime*0.1);c.rgb*=(1.0-noiseAmount+noiseAmount*n);}',
+    '  float b=1.0-(coord.y/iResolution.y);',
+    '  c.x*=0.1+b*0.8;c.y*=0.3+b*0.6;c.z*=0.5+b*0.5;',
+    '  if(multiColor>0.5){',
+    '    vec2 sc2=coord-rayPos;float ang=atan(sc2.x,sc2.y);',
+    '    float hue=fract(ang/6.2832+0.5+iTime*0.03);',
+    '    float h6=hue*6.0;float fx=h6-floor(h6);',
+    '    vec3 rc;',
+    '    if(h6<1.0)rc=vec3(1.0,fx,0.0);',
+    '    else if(h6<2.0)rc=vec3(1.0-fx,1.0,0.0);',
+    '    else if(h6<3.0)rc=vec3(0.0,1.0,fx);',
+    '    else if(h6<4.0)rc=vec3(0.0,1.0-fx,1.0);',
+    '    else if(h6<5.0)rc=vec3(fx,0.0,1.0);',
+    '    else rc=vec3(1.0,0.0,1.0-fx);',
+    '    c.rgb=mix(c.rgb,c.rgb*mix(vec3(1.0),rc,0.3),0.6);',
+    '  }',
+    '  if(saturation!=1.0){float g=dot(c.rgb,vec3(0.299,0.587,0.114));c.rgb=mix(vec3(g),c.rgb,saturation);}',
+    '  c.rgb*=raysColor;',
+    '  c*=1.25;',
+    '  gl_FragColor=c;',
+    '}'
+  ].join('\n');
+
+  function compileShader(src, type) {
+    var s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+  var vs = compileShader(vertSrc, gl.VERTEX_SHADER);
+  var fs = compileShader(fragSrc, gl.FRAGMENT_SHADER);
+  var prog = gl.createProgram();
+  gl.attachShader(prog, vs);
+  gl.attachShader(prog, fs);
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  var posLoc = gl.getAttribLocation(prog, 'position');
+  var buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(posLoc);
+  gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+  var uTime = gl.getUniformLocation(prog, 'iTime');
+  var uRes = gl.getUniformLocation(prog, 'iResolution');
+  var uRayPos = gl.getUniformLocation(prog, 'rayPos');
+  var uRayDir = gl.getUniformLocation(prog, 'rayDir');
+  var uColor = gl.getUniformLocation(prog, 'raysColor');
+  var uSpeed = gl.getUniformLocation(prog, 'raysSpeed');
+  var uSpread = gl.getUniformLocation(prog, 'lightSpread');
+  var uLength = gl.getUniformLocation(prog, 'rayLength');
+  var uFade = gl.getUniformLocation(prog, 'fadeDistance');
+  var uSat = gl.getUniformLocation(prog, 'saturation');
+  var uNoise = gl.getUniformLocation(prog, 'noiseAmount');
+  var uDist = gl.getUniformLocation(prog, 'distortion');
+  var uPulse = gl.getUniformLocation(prog, 'pulsating');
+  var uMulti = gl.getUniformLocation(prog, 'multiColor');
+
+  function resize() {
+    var dpr = Math.min(window.devicePixelRatio, 2);
+    var w = Math.round(window.innerWidth * dpr);
+    var h = Math.round(window.innerHeight * dpr);
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+    gl.viewport(0, 0, w, h);
+    gl.uniform2f(uRes, w, h);
+    // top-center origin
+    gl.uniform2f(uRayPos, w * 0.5, -0.2 * h);
+    gl.uniform2f(uRayDir, 0, 1);
+  }
+
+  // Props matching ReactBits LightRays defaults
+  gl.uniform3f(uColor, 1.0, 1.0, 1.0);   // raysColor: #ffffff
+  gl.uniform1f(uSpeed, 1.0);              // raysSpeed
+  gl.uniform1f(uSpread, 1.2);             // lightSpread (官方默认)
+  gl.uniform1f(uLength, 3.0);             // rayLength (官方默认)
+  gl.uniform1f(uFade, 1.0);               // fadeDistance
+  gl.uniform1f(uSat, 1.0);                // saturation
+  gl.uniform1f(uNoise, 0.0);              // noiseAmount
+  gl.uniform1f(uDist, 0.0);               // distortion
+  gl.uniform1f(uPulse, 0.0);              // pulsating: false
+  gl.uniform1f(uMulti, 1.0);              // multiColor: on (多彩模式)
+
+  resize();
+  window.addEventListener('resize', resize);
+
+  function animate(t) {
+    gl.uniform1f(uTime, t * 0.001);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(animate);
+  }
+  requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>
